@@ -1,6 +1,7 @@
 import asyncio
 import time
 from random import randint
+
 from demo.demo_telemetry import DemoTelemetry
 
 class DemoSat:
