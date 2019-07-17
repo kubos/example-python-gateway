@@ -7,6 +7,8 @@ import logging
 import time
 import traceback
 from base64 import b64encode
+import requests
+import hashlib
 
 import websockets
 
@@ -14,8 +16,9 @@ from major_tom.command import Command
 
 logger = logging.getLogger(__name__)
 
+
 class MajorTom:
-    def __init__(self, host, gateway_token, ssl_verify = False, basic_auth = None, https = True, ssl_ca_bundle = None, command_callback = None, error_callback = None):
+    def __init__(self, host, gateway_token, ssl_verify=False, basic_auth=None, https=True, ssl_ca_bundle=None, command_callback=None, error_callback=None):
         self.host = host
         self.gateway_token = gateway_token
         self.ssl_verify = ssl_verify
@@ -23,15 +26,21 @@ class MajorTom:
         self.https = https
         if ssl_verify is True and ssl_ca_bundle is None:
             raise(ValueError('"ssl_ca_bundle" must be a valid path to a certificate bundle if "ssl_verify" is True. Could fetch from https://curl.haxx.se/docs/caextract.html'))
-        else: self.ssl_ca_bundle = ssl_ca_bundle
-        self.build_endpoints()
+        else:
+            self.ssl_ca_bundle = ssl_ca_bundle
+        self.__build_endpoints()
         self.command_callback = command_callback
         self.error_callback = error_callback
         self.websocket = None
         self.queued_payloads = []
-        self.satellite = None
+        self.headers = {
+            "X-Gateway-Token": self.gateway_token
+        }
+        if self.basic_auth != None:
+            userAndPass = b64encode(str.encode(f"{self.basic_auth}")).decode("ascii")
+            self.headers['Authorization'] = f'Basic {userAndPass}'
 
-    def build_endpoints(self):
+    def __build_endpoints(self):
         if self.https:
             self.gateway_endpoint = "wss://" + self.host + "/gateway_api/v1.0"
         else:
@@ -53,16 +62,9 @@ class MajorTom:
         else:
             ssl_context = None
 
-        extra_headers = {
-            "X-Gateway-Token": self.gateway_token
-        }
-        if self.basic_auth != None:
-            userAndPass = b64encode(str.encode(f"{self.basic_auth}")).decode("ascii")
-            extra_headers['Authorization'] = 'Basic %s' %  userAndPass
-
         logger.info("Connecting to Major Tom")
         websocket = await websockets.connect(self.gateway_endpoint,
-                                             extra_headers=extra_headers,
+                                             extra_headers=self.headers,
                                              ssl=ssl_context)
         logger.info("Connected to Major Tom")
         self.websocket = websocket
@@ -104,7 +106,8 @@ class MajorTom:
         elif message_type == "hello":
             logger.info("Major Tom says hello: {}".format(message))
         else:
-            logger.warning("Unknown message type {} received from Major Tom: {}".format(message_type, message))
+            logger.warning("Unknown message type {} received from Major Tom: {}".format(
+                message_type, message))
 
     async def empty_queue(self):
         while len(self.queued_payloads) > 0 and self.websocket:
@@ -158,7 +161,7 @@ class MajorTom:
                 {
                     "system": event["system"],
 
-                    "type": event.get("type","Gateway Event"),
+                    "type": event.get("type", "Gateway Event"),
 
                     "command_id": event.get("command_id", None),
 
@@ -175,7 +178,7 @@ class MajorTom:
             ]
         })
 
-    async def transmit_command_update(self, command_id: int, state: str, dict = {}):
+    async def transmit_command_update(self, command_id: int, state: str, dict={}):
         update = {
             "type": "command_update",
             "command": {
@@ -188,13 +191,13 @@ class MajorTom:
         await self.transmit(update)
 
     async def fail_command(self, command_id: int, errors: list):
-        await self.transmit_command_update(command_id = command_id, state = "failed", dict = {"errors":errors})
+        await self.transmit_command_update(command_id=command_id, state="failed", dict={"errors": errors})
 
     async def complete_command(self, command_id: int, output: str):
-        await self.transmit_command_update(command_id = command_id, state = "completed", dict = {"output":output})
+        await self.transmit_command_update(command_id=command_id, state="completed", dict={"output": output})
 
-    async def transmitted_command(self, command_id: int, payload = "None Provided"):
-        await self.transmit_command_update(command_id = command_id, state = "transmitted_to_system", dict = {"payload":payload})
+    async def transmitted_command(self, command_id: int, payload="None Provided"):
+        await self.transmit_command_update(command_id=command_id, state="transmitted_to_system", dict={"payload": payload})
 
     async def update_command_definitions(self, system: str, definitions: dict):
         """
@@ -219,7 +222,7 @@ class MajorTom:
             }
         })
 
-    async def update_file_list(self, system: str, files: list, timestamp = int(time.time() * 1000)):
+    async def update_file_list(self, system: str, files: list, timestamp=int(time.time() * 1000)):
         """
         "files" must be of the format:
         [
@@ -240,3 +243,91 @@ class MajorTom:
                 "files": files
             }
         })
+
+    def download_staged_file(self, gateway_download_path):
+        if self.https:
+            download_url = "https://"
+        else:
+            download_url = "http://"
+        download_url = download_url + self.host + gateway_download_path
+        r = requests.get(download_url, headers=self.headers)
+        for field in r.headers:
+            logger.debug(f'{field}  :  {r.headers[field]}')
+        if r.status_code != 200:
+            raise(RuntimeError(f"File Download Failed. Status code: {r.status_code}"))
+        filename = re.findall('filename="(.+)";', r.headers['Content-Disposition'])[0]
+        logger.info(f"Downloaded Staged File: {filename}")
+        return filename, r.content
+
+    def upload_downlinked_file(self, filename: str, filepath: str, system: str, timestamp=time.time()*1000, content_type="binary/octet-stream", command_id=None, metadata=None):
+
+        # Get size and checksum
+        byte_size = int(os.path.getsize(filepath))
+        with open(filepath, 'rb') as file_handle:
+            checksum = b64encode(hashlib.md5(file_handle.read()).digest())
+
+        # Data to request upload
+        request_data = {
+            "filename": filename,
+            "byte_size": byte_size,
+            "content_type": content_type,
+            "checksum": checksum
+        }
+
+        # POST file info to Major Tom and get upload info
+        if self.https:
+            request_url = "https://"
+        else:
+            request_url = "http://"
+        request_url += self.host + "/rails/active_storage/direct_uploads"
+        logging.debug(f"Requesting {request_url} with data: {request_data}")
+        request_r = requests.post(url=request_url, headers=self.headers, data=request_data)
+        if request_r.status_code != 200:
+            logger.error(
+                f"Transaction Failed. Status code: {request_r.status_code} \n Text Response: {request_r.text}")
+            raise(RuntimeError(f"File Upload Request Failed. Status code: {request_r.status_code}"))
+        request_content = json.loads(request_r.content)
+        for field in request_content:
+            logger.debug(f'{field}  :  {request_content[field]}')
+
+        # PUT file to MT file bucket (S3 or Minio)
+        headers = {
+            "Content-Type": content_type,
+            "Content-MD5": checksum
+        }
+        upload_url = request_content["direct_upload"]["url"]
+        logger.debug(f"Headers: {headers}\nUpload URL: {upload_url}")
+        with open(filepath, 'rb') as file_handle:
+            upload_r = requests.put(
+                url=upload_url,
+                headers=headers,
+                data=file_handle)
+
+        if upload_r.status_code != 200:
+            logger.error(
+                f"Transaction Failed. Status code: {upload_r.status_code} \n Text Response: {upload_r.text}")
+            raise(RuntimeError(f"File Upload Request Failed. Status code: {upload_r.status_code}"))
+
+        # Data about the file to show to the operator
+        file_data = {
+            "signed_id": request_content["signed_id"],
+            "name": filename,
+            "timestamp": timestamp,
+            "system": system
+        }
+        if command_id != None:
+            file_data["command_id"] = command_id
+        if metadata != None:
+            file_data["metadata"] = metadata
+
+        # POST file data to Major Tom
+        if self.https:
+            file_data_url = "https://"
+        else:
+            file_data_url = "http://"
+        file_data_url += self.host + "/gateway_api/v1.0/downlinked_files"
+        file_data_r = requests.post(url=file_data_url, headers=self.headers, json=file_data)
+        if file_data_r.status_code != 200:
+            logger.error(
+                f"Transaction Failed. Status code: {file_data_r.status_code} \n Text Response: {file_data_r.text}")
+            raise(RuntimeError(f"File Data Post Failed. Status code: {file_data_r.status_code}"))
