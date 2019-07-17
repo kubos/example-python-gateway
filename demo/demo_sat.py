@@ -129,12 +129,13 @@ class DemoSat:
                 """
                 Sends a dummy file list to Major Tom.
                 """
-                self.file_list.append({
-                    "name": f'Payload-Image-{(len(self.file_list)+1):04d}.png',
-                    "size": randint(2000000, 3000000),
-                    "timestamp": int(time.time() * 1000),
-                    "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
-                })
+                for i in range(1, randint(1, 4)):
+                    self.file_list.append({
+                        "name": f'Payload-Image-{(len(self.file_list)+1):04d}.png',
+                        "size": randint(2000000, 3000000),
+                        "timestamp": int(time.time() * 1000) + i*10,
+                        "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
+                    })
                 asyncio.ensure_future(major_tom.update_file_list(
                     system=self.name, files=self.file_list))
                 await asyncio.sleep(3)
