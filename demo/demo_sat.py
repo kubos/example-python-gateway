@@ -149,16 +149,11 @@ class DemoSat:
                     }
                 ]
                 asyncio.ensure_future(major_tom.update_file_list(system=self.name, files=file_list))
+                await asyncio.sleep(3)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output="Updated Remote File List"
                 ))
-
-            elif command.type == "execute_maneuver":
-                """
-
-                """
-                pass
 
             elif command.type == "error":
                 """
@@ -187,7 +182,7 @@ class DemoSat:
                         "payload": "0xFFFF"
                     }
                 ))
-                await asyncio.sleep(10)
+                await asyncio.sleep(8)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output="Spacecraft Confirmed Safemode"
