@@ -63,9 +63,19 @@ class MajorTom:
             ssl_context = None
 
         logger.info("Connecting to Major Tom")
-        websocket = await websockets.connect(self.gateway_endpoint,
-                                             extra_headers=self.headers,
-                                             ssl=ssl_context)
+        try:
+            websocket = await websockets.connect(self.gateway_endpoint,
+                                                 extra_headers=self.headers,
+                                                 ssl=ssl_context)
+        except websockets.exceptions.InvalidStatusCode as e:
+            if e.status_code == 401:
+                e.args = [
+                    f"{self.host} requires BasicAuth credentials. Please include that argument. Websocket Error: {e.args}"]
+            elif e.status_code == 403:
+                e.args = [
+                    f"Gateway Token is Invalid: {self.gateway_token} Websocket Error: {e.args}"]
+            raise(e)
+
         logger.info("Connected to Major Tom")
         self.websocket = websocket
         await asyncio.sleep(1)

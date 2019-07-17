@@ -204,13 +204,21 @@ class DemoSat:
                         "status": "Downloading Staged File from Major Tom for Transmission"
                     }
                 ))
+                # Download file from Major Tom
                 try:
                     filename, content = major_tom.download_staged_file(
                         gateway_download_path=command.fields["gateway_download_path"])
                 except Exception as e:
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
+                # Write file locally.
+                with open(filename, "wb") as f:
+                    f.write(content)
 
+                # Delete file because we aren't actually doing anything with it.
+                os.remove(filename)
+
+                # Update Major Tom with progress as if we're uplinking the file to the spacecraft
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
