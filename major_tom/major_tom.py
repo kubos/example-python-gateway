@@ -33,7 +33,6 @@ class MajorTom:
         self.error_callback = error_callback
         self.websocket = None
         self.queued_payloads = []
-        self.satellite = None
         self.headers = {
             "X-Gateway-Token": self.gateway_token
         }
@@ -275,7 +274,7 @@ class MajorTom:
             "checksum": checksum
         }
 
-        # POST file info and get upload info
+        # POST file info to Major Tom and get upload info
         if self.https:
             request_url = "https://"
         else:
@@ -291,8 +290,7 @@ class MajorTom:
         for field in request_content:
             logger.debug(f'{field}  :  {request_content[field]}')
 
-        # PUT file to MT
-        # headers = request_content["direct_upload"]["headers"]
+        # PUT file to MT file bucket (S3 or Minio)
         headers = {
             "Content-Type": content_type,
             "Content-MD5": checksum
