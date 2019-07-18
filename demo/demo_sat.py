@@ -18,6 +18,7 @@ class DemoSat:
     def __init__(self, name="Space Oddity"):
         self.name = name
         self.telemetry = DemoTelemetry(name=name)
+        self.file_list = []
         self.definitions = {
             "ping": {
                 "display_name": "Ping",
@@ -128,33 +129,15 @@ class DemoSat:
                 """
                 Sends a dummy file list to Major Tom.
                 """
-                file_list = [
-                    {
-                        "name": "PayloadImage004",
-                        "size": randint(10000000, 100000000),
-                        "timestamp": int(time.time() * 1000),
-                        "metadata": {"type": "image", "lat": (randint(-179, 179) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
-                    },
-                    {
-                        "name": "PayloadImage003",
-                        "size": randint(10000000, 100000000),
-                        "timestamp": int(time.time() * 1000) - 30*1000,
-                        "metadata": {"type": "image", "lat": (randint(-179, 179) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
-                    },
-                    {
-                        "name": "PayloadImage002",
-                        "size": randint(10000000, 100000000),
-                        "timestamp": int(time.time() * 1000) - 90*1000,
-                        "metadata": {"type": "image", "lat": (randint(-179, 179) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
-                    },
-                    {
-                        "name": "PayloadImage001",
-                        "size": randint(10000000, 100000000),
-                        "timestamp": int(time.time() * 1000) - 240*1000,
-                        "metadata": {"type": "image", "lat": (randint(-179, 179) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
-                    }
-                ]
-                asyncio.ensure_future(major_tom.update_file_list(system=self.name, files=file_list))
+                for i in range(1, randint(1, 4)):
+                    self.file_list.append({
+                        "name": f'Payload-Image-{(len(self.file_list)+1):04d}.png',
+                        "size": randint(2000000, 3000000),
+                        "timestamp": int(time.time() * 1000) + i*10,
+                        "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
+                    })
+                asyncio.ensure_future(major_tom.update_file_list(
+                    system=self.name, files=self.file_list))
                 await asyncio.sleep(3)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
@@ -337,6 +320,7 @@ class DemoSat:
                         "status": "Downlinking File from Spacecraft"
                     }
                 ))
+                await asyncio.sleep(3)
 
                 # Get the latest image of the earth from epic cam
                 try:
@@ -353,9 +337,13 @@ class DemoSat:
                         logger.debug(f'{field}  :  {latest_image[field]}')
                     image_date = datetime.datetime.strptime(
                         latest_image["date"], "%Y-%m-%d %H:%M:%S")
-                    image_filename = latest_image["image"] + ".png"
+                    api_filename = latest_image["image"] + ".png"
+                    if command.fields["filename"] != "":
+                        image_filename = command.fields["filename"]
+                    else:
+                        image_filename = api_filename
                     image_url = "https://epic.gsfc.nasa.gov/archive/natural" + \
-                        image_date.strftime("/%Y/%m/%d") + "/png/" + image_filename
+                        image_date.strftime("/%Y/%m/%d") + "/png/" + api_filename
 
                     # Get the image itself
                     image_r = requests.get(image_url)
@@ -366,7 +354,7 @@ class DemoSat:
                     # Write file to disk
                     with open(image_filename, "wb") as f:
                         f.write(image_r.content)
-                    logger.info(f"Downloaded Image: {image_filename}")
+                    logger.info(f"Downloaded Image: {api_filename} as name {image_filename}")
                 except RuntimeError as e:
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
@@ -376,7 +364,7 @@ class DemoSat:
                     command_id=command.id,
                     state="processing_on_gateway",
                     dict={
-                        "status": f'File: "{image_filename}" Downlinked, Validating'
+                        "status": f'File: "{api_filename}" Downlinked, Validating'
                     }
                 ))
                 await asyncio.sleep(3)
@@ -384,7 +372,7 @@ class DemoSat:
                     command_id=command.id,
                     state="processing_on_gateway",
                     dict={
-                        "status": f'"{image_filename}" is Valid, Uploading to Major Tom'
+                        "status": f'"{api_filename}" is Valid, Uploading to Major Tom'
                     }
                 ))
 
@@ -392,7 +380,7 @@ class DemoSat:
                 try:
                     major_tom.upload_downlinked_file(
                         filename=image_filename,
-                        filepath=image_filename,
+                        filepath=image_filename,  # Same as the name since we stored it locally
                         system=self.name,
                         command_id=command.id,
                         content_type=image_r.headers["Content-Type"],
