@@ -114,16 +114,22 @@ class DemoSat:
                 Nominal sends normal data that just varies slightly
                 """
                 self.telemetry.safemode = False
-                if command.fields['mode'] == "ERROR":
-                    asyncio.ensure_future(self.telemetry.generate_telemetry(
-                        duration=command.fields['duration'], major_tom=major_tom, type="ERROR"))
+                if type(command.fields['duration']) != type(int()):
+                    asyncio.ensure_future(major_tom.fail_command(
+                        command_id=command.id, errors=[
+                            f"Duration type is invalid. Must be an int. Type: {type(command.fields['duration'])}"
+                        ]))
                 else:
-                    asyncio.ensure_future(self.telemetry.generate_telemetry(
-                        duration=command.fields['duration'], major_tom=major_tom, type="NOMINAL"))
+                    if command.fields['mode'] == "ERROR":
+                        asyncio.ensure_future(self.telemetry.generate_telemetry(
+                            duration=command.fields['duration'], major_tom=major_tom, type="ERROR"))
+                    else:
+                        asyncio.ensure_future(self.telemetry.generate_telemetry(
+                            duration=command.fields['duration'], major_tom=major_tom, type="NOMINAL"))
 
-                asyncio.ensure_future(major_tom.complete_command(
-                    command_id=command.id,
-                    output=f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."))
+                    asyncio.ensure_future(major_tom.complete_command(
+                        command_id=command.id,
+                        output=f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."))
 
             elif command.type == "update_file_list":
                 """
