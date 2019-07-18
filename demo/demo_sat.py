@@ -29,6 +29,11 @@ class DemoSat:
                 "description": "Always errors to show the error process.",
                 "fields": []
             },
+            "spacecraft_error": {
+                "display_name": "Critical Event Command",
+                "description": "Causes a critical error on the Spacecraft.",
+                "fields": []
+            },
             "update_file_list": {
                 "display_name": "Update File List",
                 "description": "Downlinks the latest file list from the spacecraft.",
@@ -107,12 +112,13 @@ class DemoSat:
                 Error sends data with low battery voltage and low uptime counter
                 Nominal sends normal data that just varies slightly
                 """
+                self.telemetry.safemode = False
                 if command.fields['mode'] == "ERROR":
-                    asyncio.ensure_future(self.telemetry.error(
-                        duration=command.fields['duration'], major_tom=major_tom))
+                    asyncio.ensure_future(self.telemetry.generate_telemetry(
+                        duration=command.fields['duration'], major_tom=major_tom, type="ERROR"))
                 else:
-                    asyncio.ensure_future(self.telemetry.nominal(
-                        duration=command.fields['duration'], major_tom=major_tom))
+                    asyncio.ensure_future(self.telemetry.generate_telemetry(
+                        duration=command.fields['duration'], major_tom=major_tom, type="NOMINAL"))
 
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
@@ -170,6 +176,30 @@ class DemoSat:
                 asyncio.ensure_future(major_tom.fail_command(
                     command_id=command.id, errors=["Command failed to execute."]))
 
+            elif command.type == "spacecraft_error":
+                """
+                Makes the Spacecraft generate a Critical error event.
+                """
+                asyncio.ensure_future(major_tom.transmit_command_update(
+                    command_id=command.id,
+                    state="uplinking_to_system",
+                    dict={
+                        "status": "Uplinking Command"
+                    }
+                ))
+                await asyncio.sleep(1)
+                event = {
+                    "system": self.name,
+                    "type": "CRITICAL ERROR",
+                    "level": "critical",
+                    "message": "A Critical Error Occurred!",
+                    "timestamp": int(time.time() * 1000)
+                }
+                asyncio.ensure_future(major_tom.transmit_events(events=[event]))
+                await asyncio.sleep(1)
+                asyncio.ensure_future(major_tom.fail_command(
+                    command_id=command.id, errors=["Command caused critical error"]))
+
             elif command.type == "safemode":
                 """
                 Simulates uplinking a safemode command, and the satellite confirming.
@@ -182,7 +212,9 @@ class DemoSat:
                         "payload": "0xFFFF"
                     }
                 ))
-                await asyncio.sleep(8)
+                await asyncio.sleep(3)
+                self.telemetry.safemode = True
+                await asyncio.sleep(3)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output="Spacecraft Confirmed Safemode"
