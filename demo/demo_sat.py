@@ -84,18 +84,19 @@ class DemoSat:
                 """
                 Simulates achieving an RF Lock with the spacecraft.
                 """
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="preparing_on_gateway",
                     dict={"status": "Pointing Antennas"}
                 ))
-                await asyncio.sleep(5)
+                await asyncio.sleep(4)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
                     dict={"status": "Broadcasting Acquisition Signal"}
                 ))
-                await asyncio.sleep(5)
+                await asyncio.sleep(4)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="acked_by_system",
@@ -120,6 +121,7 @@ class DemoSat:
                             f"Duration type is invalid. Must be an int. Type: {type(command.fields['duration'])}"
                         ]))
                 else:
+                    await asyncio.sleep(2)
                     if command.fields['mode'] == "ERROR":
                         asyncio.ensure_future(self.telemetry.generate_telemetry(
                             duration=command.fields['duration'], major_tom=major_tom, type="ERROR"))
@@ -127,6 +129,7 @@ class DemoSat:
                         asyncio.ensure_future(self.telemetry.generate_telemetry(
                             duration=command.fields['duration'], major_tom=major_tom, type="NOMINAL"))
 
+                    await asyncio.sleep(2)
                     asyncio.ensure_future(major_tom.complete_command(
                         command_id=command.id,
                         output=f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."))
@@ -235,6 +238,7 @@ class DemoSat:
                 os.remove(filename)
 
                 # Update Major Tom with progress as if we're uplinking the file to the spacecraft
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -248,7 +252,7 @@ class DemoSat:
                         "progress_2_label": "Percent Acked"
                     }
                 ))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -258,7 +262,7 @@ class DemoSat:
                         "progress_2_current": 10
                     }
                 ))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -268,7 +272,7 @@ class DemoSat:
                         "progress_2_current": 30
                     }
                 ))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -278,7 +282,7 @@ class DemoSat:
                         "progress_2_current": 50
                     }
                 ))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -288,7 +292,7 @@ class DemoSat:
                         "progress_2_current": 70
                     }
                 ))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -298,7 +302,7 @@ class DemoSat:
                         "progress_2_current": 90
                     }
                 ))
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -319,6 +323,7 @@ class DemoSat:
                 Ignores the filename argument, and always pulls the latest
                 image from NASA's Epic cam.
                 """
+                await asyncio.sleep(1)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="downlinking_from_system",
@@ -366,6 +371,7 @@ class DemoSat:
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
 
                 # Update command in Major Tom
+                await asyncio.sleep(2)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="processing_on_gateway",
@@ -392,6 +398,7 @@ class DemoSat:
                         content_type=image_r.headers["Content-Type"],
                         metadata=latest_image
                     )
+                    await asyncio.sleep(2)
                     asyncio.ensure_future(major_tom.complete_command(
                         command_id=command.id,
                         output=f'"{image_filename}" successfully downlinked from Spacecraft and uploaded to Major Tom'
