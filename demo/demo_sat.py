@@ -135,7 +135,7 @@ class DemoSat:
                 """
                 Sends a dummy file list to Major Tom.
                 """
-                for i in range(1, randint(1, 4)):
+                for i in range(1, randint(2, 4)):
                     self.file_list.append({
                         "name": f'Payload-Image-{(len(self.file_list)+1):04d}.png',
                         "size": randint(2000000, 3000000),
