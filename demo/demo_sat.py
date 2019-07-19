@@ -93,18 +93,17 @@ class DemoSat:
 
     def check_cancelled(self, id, major_tom):
         if self.running_commands[str(id)]["cancel"]:
-            asyncio.ensure_future(major_tom.cancel_command(command_id=id))
+            # Raise an exception to immediately stop the command operations
             raise(CommandCancelledError(f"Command {id} Cancelled"))
         else:
             return
 
     async def command_callback(self, command, major_tom):
-        self.running_commands[str(command.id)] = {}
+        self.running_commands[str(command.id)] = {"cancel": False}
         try:
             if command.type == "ping":
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id, output="pong"))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "connect":
                 """
@@ -137,7 +136,6 @@ class DemoSat:
                     command_id=command.id,
                     output="Link Established"
                 ))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "telemetry":
                 """
@@ -166,7 +164,6 @@ class DemoSat:
                     asyncio.ensure_future(major_tom.complete_command(
                         command_id=command.id,
                         output=f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."))
-                    self.running_commands.pop(str(command.id))
 
             elif command.type == "update_file_list":
                 """
@@ -189,7 +186,6 @@ class DemoSat:
                     command_id=command.id,
                     output="Updated Remote File List"
                 ))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "error":
                 """
@@ -207,7 +203,6 @@ class DemoSat:
                 self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.fail_command(
                     command_id=command.id, errors=["Command failed to execute."]))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "spacecraft_error":
                 """
@@ -234,7 +229,6 @@ class DemoSat:
                 self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.fail_command(
                     command_id=command.id, errors=["Command caused critical error"]))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "safemode":
                 """
@@ -257,7 +251,6 @@ class DemoSat:
                     command_id=command.id,
                     output="Spacecraft Confirmed Safemode"
                 ))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "uplink_file":
                 """
@@ -279,7 +272,7 @@ class DemoSat:
                 except Exception as e:
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
-                    self.running_commands.pop(str(command.id))
+
                 # Write file locally.
                 with open(filename, "wb") as f:
                     f.write(content)
@@ -374,7 +367,6 @@ class DemoSat:
                     command_id=command.id,
                     output=f"File {filename} Successfully Uplinked to Spacecraft"
                 ))
-                self.running_commands.pop(str(command.id))
 
             elif command.type == "downlink_file":
                 """
@@ -432,7 +424,6 @@ class DemoSat:
                 except RuntimeError as e:
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
-                    self.running_commands.pop(str(command.id))
 
                 # Update command in Major Tom
                 await asyncio.sleep(2)
@@ -471,9 +462,7 @@ class DemoSat:
                         command_id=command.id,
                         output=f'"{image_filename}" successfully downlinked from Spacecraft and uploaded to Major Tom'
                     ))
-                    self.running_commands.pop(str(command.id))
                 except RuntimeError as e:
-                    self.running_commands.pop(str(command.id))
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "Downlinked File failed to upload to Major Tom", f"Error: {traceback.format_exc()}"]))
 
@@ -481,7 +470,10 @@ class DemoSat:
                 os.remove(image_filename)
 
         except Exception as e:
-            asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
-                                  "Command Failed to Execute. Unknown Error Occurred.", f"Error: {traceback.format_exc()}"]))
-            self.running_commands.pop(str(command.id))
+            if type(e) == type(CommandCancelledError()):
+                asyncio.ensure_future(major_tom.cancel_command(command_id=command.id))
+            else:
+                asyncio.ensure_future(major_tom.fail_command(
+                    command_id=command.id, errors=[
+                        "Command Failed to Execute. Unknown Error Occurred.", f"Error: {traceback.format_exc()}"]))
         self.running_commands.pop(str(command.id))
