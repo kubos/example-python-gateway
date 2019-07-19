@@ -64,7 +64,8 @@ major_tom = MajorTom(
     host=args.majortomhost,
     gateway_token=args.gatewaytoken,
     basic_auth=args.basicauth,
-    command_callback=demo_sat.command_filter
+    command_callback=demo_sat.command_callback,
+    cancel_callback=demo_sat.cancel_callback
 )
 
 logger.debug("Connecting to MajorTom")

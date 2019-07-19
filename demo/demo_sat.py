@@ -14,11 +14,16 @@ from demo.demo_telemetry import DemoTelemetry
 logger = logging.getLogger(__name__)
 
 
+class CommandCancelledError(Exception):
+    """Raised when a command is cancelled to halt the progress of that command"""
+
+
 class DemoSat:
     def __init__(self, name="Space Oddity"):
         self.name = name
         self.telemetry = DemoTelemetry(name=name)
         self.file_list = []
+        self.running_commands = {}
         self.definitions = {
             "ping": {
                 "display_name": "Ping",
@@ -74,39 +79,65 @@ class DemoSat:
             }
         }
 
-    async def command_filter(self, command, major_tom):
+    async def cancel_callback(self, id, major_tom):
+        if str(id) in self.running_commands:
+            self.running_commands[str(id)]["cancel"] = True
+        else:
+            asyncio.ensure_future(major_tom.transmit_events(events=[{
+                "system": self.name,
+                "type": "Command Cancellation Failed",
+                "command_id": id,
+                "level": "warning",
+                "message": "Command is not running. Unable to cancel command."
+            }]))
+
+    def check_cancelled(self, id, major_tom):
+        if self.running_commands[str(id)]["cancel"]:
+            asyncio.ensure_future(major_tom.cancel_command(command_id=id))
+            raise(CommandCancelledError(f"Command {id} Cancelled"))
+        else:
+            return
+
+    async def command_callback(self, command, major_tom):
+        self.running_commands[str(command.id)] = {}
         try:
             if command.type == "ping":
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id, output="pong"))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "connect":
                 """
                 Simulates achieving an RF Lock with the spacecraft.
                 """
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="preparing_on_gateway",
                     dict={"status": "Pointing Antennas"}
                 ))
                 await asyncio.sleep(4)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
                     dict={"status": "Broadcasting Acquisition Signal"}
                 ))
                 await asyncio.sleep(4)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="acked_by_system",
                     dict={"status": "Received acknowledgement from Spacecraft"}
                 ))
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output="Link Established"
                 ))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "telemetry":
                 """
@@ -122,6 +153,7 @@ class DemoSat:
                         ]))
                 else:
                     await asyncio.sleep(2)
+                    self.check_cancelled(id=command.id, major_tom=major_tom)
                     if command.fields['mode'] == "ERROR":
                         asyncio.ensure_future(self.telemetry.generate_telemetry(
                             duration=command.fields['duration'], major_tom=major_tom, type="ERROR"))
@@ -130,9 +162,11 @@ class DemoSat:
                             duration=command.fields['duration'], major_tom=major_tom, type="NOMINAL"))
 
                     await asyncio.sleep(2)
+                    self.check_cancelled(id=command.id, major_tom=major_tom)
                     asyncio.ensure_future(major_tom.complete_command(
                         command_id=command.id,
                         output=f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."))
+                    self.running_commands.pop(str(command.id))
 
             elif command.type == "update_file_list":
                 """
@@ -145,18 +179,23 @@ class DemoSat:
                         "timestamp": int(time.time() * 1000) + i*10,
                         "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
                     })
+
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.update_file_list(
                     system=self.name, files=self.file_list))
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output="Updated Remote File List"
                 ))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "error":
                 """
                 Always errors.
                 """
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -165,8 +204,10 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.fail_command(
                     command_id=command.id, errors=["Command failed to execute."]))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "spacecraft_error":
                 """
@@ -180,6 +221,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(1)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 event = {
                     "system": self.name,
                     "type": "CRITICAL ERROR",
@@ -189,8 +231,10 @@ class DemoSat:
                 }
                 asyncio.ensure_future(major_tom.transmit_events(events=[event]))
                 await asyncio.sleep(1)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.fail_command(
                     command_id=command.id, errors=["Command caused critical error"]))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "safemode":
                 """
@@ -205,17 +249,21 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 self.telemetry.safemode = True
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output="Spacecraft Confirmed Safemode"
                 ))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "uplink_file":
                 """
                 Simulates uplinking a file by going through the whole progress bar scenario
                 """
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="processing_on_gateway",
@@ -225,11 +273,13 @@ class DemoSat:
                 ))
                 # Download file from Major Tom
                 try:
+                    self.check_cancelled(id=command.id, major_tom=major_tom)
                     filename, content = major_tom.download_staged_file(
                         gateway_download_path=command.fields["gateway_download_path"])
                 except Exception as e:
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
+                    self.running_commands.pop(str(command.id))
                 # Write file locally.
                 with open(filename, "wb") as f:
                     f.write(content)
@@ -239,6 +289,7 @@ class DemoSat:
 
                 # Update Major Tom with progress as if we're uplinking the file to the spacecraft
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -253,6 +304,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -263,6 +315,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -273,6 +326,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -283,6 +337,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -293,6 +348,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -303,6 +359,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="uplinking_to_system",
@@ -312,10 +369,12 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.complete_command(
                     command_id=command.id,
                     output=f"File {filename} Successfully Uplinked to Spacecraft"
                 ))
+                self.running_commands.pop(str(command.id))
 
             elif command.type == "downlink_file":
                 """
@@ -324,6 +383,7 @@ class DemoSat:
                 image from NASA's Epic cam.
                 """
                 await asyncio.sleep(1)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="downlinking_from_system",
@@ -332,6 +392,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
 
                 # Get the latest image of the earth from epic cam
                 try:
@@ -357,21 +418,25 @@ class DemoSat:
                         image_date.strftime("/%Y/%m/%d") + "/png/" + api_filename
 
                     # Get the image itself
+                    self.check_cancelled(id=command.id, major_tom=major_tom)
                     image_r = requests.get(image_url)
                     if image_r.status_code != 200:
                         raise(RuntimeError(
                             f"File Download Failed. Status code: {image_r.status_code}"))
 
                     # Write file to disk
+                    self.check_cancelled(id=command.id, major_tom=major_tom)
                     with open(image_filename, "wb") as f:
                         f.write(image_r.content)
                     logger.info(f"Downloaded Image: {api_filename} as name {image_filename}")
                 except RuntimeError as e:
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "File failed to download", f"Error: {traceback.format_exc()}"]))
+                    self.running_commands.pop(str(command.id))
 
                 # Update command in Major Tom
                 await asyncio.sleep(2)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="processing_on_gateway",
@@ -380,6 +445,7 @@ class DemoSat:
                     }
                 ))
                 await asyncio.sleep(3)
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 asyncio.ensure_future(major_tom.transmit_command_update(
                     command_id=command.id,
                     state="processing_on_gateway",
@@ -389,6 +455,7 @@ class DemoSat:
                 ))
 
                 # Upload file to Major Tom with Metadata
+                self.check_cancelled(id=command.id, major_tom=major_tom)
                 try:
                     major_tom.upload_downlinked_file(
                         filename=image_filename,
@@ -399,11 +466,14 @@ class DemoSat:
                         metadata=latest_image
                     )
                     await asyncio.sleep(2)
+                    self.check_cancelled(id=command.id, major_tom=major_tom)
                     asyncio.ensure_future(major_tom.complete_command(
                         command_id=command.id,
                         output=f'"{image_filename}" successfully downlinked from Spacecraft and uploaded to Major Tom'
                     ))
+                    self.running_commands.pop(str(command.id))
                 except RuntimeError as e:
+                    self.running_commands.pop(str(command.id))
                     asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                           "Downlinked File failed to upload to Major Tom", f"Error: {traceback.format_exc()}"]))
 
@@ -413,3 +483,5 @@ class DemoSat:
         except Exception as e:
             asyncio.ensure_future(major_tom.fail_command(command_id=command.id, errors=[
                                   "Command Failed to Execute. Unknown Error Occurred.", f"Error: {traceback.format_exc()}"]))
+            self.running_commands.pop(str(command.id))
+        self.running_commands.pop(str(command.id))
