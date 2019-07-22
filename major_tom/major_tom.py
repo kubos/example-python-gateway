@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class MajorTom:
-    def __init__(self, host, gateway_token, ssl_verify=False, basic_auth=None, https=True, ssl_ca_bundle=None, command_callback=None, error_callback=None):
+    def __init__(self, host, gateway_token, ssl_verify=False, basic_auth=None, https=True, ssl_ca_bundle=None, command_callback=None, error_callback=None, cancel_callback=None):
         self.host = host
         self.gateway_token = gateway_token
         self.ssl_verify = ssl_verify
@@ -31,6 +31,7 @@ class MajorTom:
         self.__build_endpoints()
         self.command_callback = command_callback
         self.error_callback = error_callback
+        self.cancel_callback = cancel_callback
         self.websocket = None
         self.queued_payloads = []
         self.headers = {
@@ -108,7 +109,23 @@ class MajorTom:
                 """
                 asyncio.ensure_future(self.command_callback(command, self))
             else:
-                await self.fail_command(command.id, errors=["No command callback implemented"])
+                asyncio.ensure_future(self.fail_command(
+                    command.id, errors=["No command callback implemented"]))
+        elif message_type == "cancel":
+            if self.cancel_callback != None:
+                """
+                TODO: Track the task and ensure it completes without errors
+                reference: https://medium.com/@yeraydiazdiaz/asyncio-coroutine-patterns-errors-and-cancellation-3bb422e961ff
+                """
+                asyncio.ensure_future(self.cancel_callback(message["command"]["id"], self))
+            else:
+                asyncio.ensure_future(self.transmit_events(events=[{
+                    "system": None,
+                    "type": "Command Cancellation Failed",
+                    "command_id": message["command"]["id"],
+                    "level": "warning",
+                    "message": "No cancel callback registered. Unable to cancel command."
+                }]))
         elif message_type == "error":
             logger.error("Error from Major Tom: {}".format(message["error"]))
             if self.error_callback != None:
@@ -169,7 +186,7 @@ class MajorTom:
             "type": "events",
             "events": [
                 {
-                    "system": event["system"],
+                    "system": event.get("system", None),
 
                     "type": event.get("type", "Gateway Event"),
 
@@ -205,6 +222,9 @@ class MajorTom:
 
     async def complete_command(self, command_id: int, output: str):
         await self.transmit_command_update(command_id=command_id, state="completed", dict={"output": output})
+
+    async def cancel_command(self, command_id: int):
+        await self.transmit_command_update(command_id=command_id, state="cancelled")
 
     async def transmitted_command(self, command_id: int, payload="None Provided"):
         await self.transmit_command_update(command_id=command_id, state="transmitted_to_system", dict={"payload": payload})
