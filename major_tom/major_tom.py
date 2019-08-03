@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class MajorTom:
-    def __init__(self, host, gateway_token, ssl_verify=False, basic_auth=None, https=True, ssl_ca_bundle=None, command_callback=None, error_callback=None, cancel_callback=None):
+    def __init__(self, host, gateway_token, ssl_verify=False, basic_auth=None, https=True, ssl_ca_bundle=None, command_callback=None, error_callback=None, rate_limit_callback=None, cancel_callback=None):
         self.host = host
         self.gateway_token = gateway_token
         self.ssl_verify = ssl_verify
@@ -31,6 +31,7 @@ class MajorTom:
         self.__build_endpoints()
         self.command_callback = command_callback
         self.error_callback = error_callback
+        self.rate_limit_callback = rate_limit_callback
         self.cancel_callback = cancel_callback
         self.websocket = None
         self.queued_payloads = []
@@ -102,7 +103,7 @@ class MajorTom:
         logger.debug("From Major Tom: {}".format(message))
         if message_type == "command":
             command = Command(message["command"])
-            if self.command_callback != None:
+            if self.command_callback is not None:
                 """
                 TODO: Track the task and ensure it completes without errors
                 reference: https://medium.com/@yeraydiazdiaz/asyncio-coroutine-patterns-errors-and-cancellation-3bb422e961ff
@@ -112,7 +113,7 @@ class MajorTom:
                 asyncio.ensure_future(self.fail_command(
                     command.id, errors=["No command callback implemented"]))
         elif message_type == "cancel":
-            if self.cancel_callback != None:
+            if self.cancel_callback is not None:
                 """
                 TODO: Track the task and ensure it completes without errors
                 reference: https://medium.com/@yeraydiazdiaz/asyncio-coroutine-patterns-errors-and-cancellation-3bb422e961ff
@@ -128,8 +129,12 @@ class MajorTom:
                 }]))
         elif message_type == "error":
             logger.error("Error from Major Tom: {}".format(message["error"]))
-            if self.error_callback != None:
+            if self.error_callback is not None:
                 asyncio.ensure_future(self.error_callback(message))
+        elif message_type == "rate_limit":
+            logger.error("Rate limit from Major Tom: {}".format(message["rate_limit"]))
+            if self.rate_limit_callback is not None:
+                asyncio.ensure_future(self.rate_limit_callback(message))
         elif message_type == "hello":
             logger.info("Major Tom says hello: {}".format(message))
         else:
