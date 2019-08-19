@@ -1,6 +1,6 @@
 # Demo Python Gateway
 
-This repository serves as both an example implementation of how a Gateway interacts with Major Tom using the Gateway API and 
+This Gateway serves as both an example of interacting with Major Tom using the Gateway API and 
 a demo Satellite which responds to commands, generates telemetry, and uplinks/downlinks files. 
 
 If you have any issues setting up/running this demo, 
