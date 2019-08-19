@@ -4,7 +4,7 @@ This Gateway serves as both an example of interacting with Major Tom using the G
 a demo Satellite which responds to commands, generates telemetry, and uplinks/downlinks files. 
 
 If you have any issues setting up/running this demo, 
-either [make and issue](https://github.com/kubos/example-python-gateway/issues/new) on this repository
+either [make an issue](https://github.com/kubos/example-python-gateway/issues/new) on this repository
 or [come talk to us on Slack](https://slack.kubos.com) and we'll get you sorted out! 
 
 ## Local Setup 
