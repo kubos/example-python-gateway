@@ -21,7 +21,9 @@ In addition to setting up your Local Environment, you'll need to make a Gateway 
 Once you've received your login credentials for Major Tom, make a new mission, 
 and you'll be prompted to add a Gateway to that mission. 
 
-Once you add the Gateway, you'll need the __Authentication Token__ to connect the demo gateway. You can find it on the ![Gateway Page](screenshots/gateway_page.png "Gateway Page in Major Tom").
+Once you add the Gateway, you'll need the __Authentication Token__ to connect the demo gateway. You can find it on the Gateway Page:
+
+![Gateway Page](images/gateway_page.png "Gateway Page in Major Tom")
 
 ## Connect the Gateway
 
@@ -48,7 +50,9 @@ Now that you've connected the gateway, it will automatically create a new satell
 
 You can now issue those commands to the satellite through the connected Gateway, which accomplish a wide variety of simulated tasks, all of which are explained by the description under each command. 
 
-To find these commands, go to Major Tom under the mission you originally created and look up Space Oddity in the ![satellites menu](screenshots/satellites_menu.png "Satellites Menu in Major Tom").
+To find these commands, go to Major Tom under the mission you originally created and look up Space Oddity in the Satellites Menu:  
+
+![satellites menu](images/satellites_menu.png "Satellites Menu in Major Tom")
 
 Clicking on it will take you to its commanding page, and you can fire away! 
 
