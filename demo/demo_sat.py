@@ -24,6 +24,7 @@ class DemoSat:
         self.telemetry = DemoTelemetry(name=name)
         self.file_list = []
         self.running_commands = {}
+        self.force_cancel = True  # Forces all commands to be cancelled, regardless of run state.
         self.definitions = {
             "ping": {
                 "display_name": "Ping",
@@ -80,8 +81,18 @@ class DemoSat:
         }
 
     async def cancel_callback(self, id, major_tom):
+
         if str(id) in self.running_commands:
             self.running_commands[str(id)]["cancel"] = True
+        elif self.force_cancel and str(id) not in self.running_commands:
+            asyncio.ensure_future(major_tom.cancel_command(command_id=id))
+            asyncio.ensure_future(major_tom.transmit_events(events=[{
+                "system": self.name,
+                "type": "Command Cancellation Forced",
+                "command_id": id,
+                "level": "warning",
+                "message": "Command is not running. Forcing state to Cancelled. Unable to verify if it was actually run on the System."
+            }]))
         else:
             asyncio.ensure_future(major_tom.transmit_events(events=[{
                 "system": self.name,
