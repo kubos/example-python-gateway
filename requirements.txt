@@ -1,2 +1,3 @@
 websockets
 requests
+major-tom-gateway-api

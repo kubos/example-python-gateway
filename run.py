@@ -2,7 +2,7 @@ import logging
 import asyncio
 import time
 import argparse
-from major_tom.major_tom import MajorTom
+from mt_gateway_api.gateway_api import GatewayAPI
 from demo.demo_sat import DemoSat
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ logger.debug("Setting up Demo Satellite")
 demo_sat = DemoSat(name="Space Oddity")
 
 logger.debug("Setting up MajorTom")
-major_tom = MajorTom(
+gateway = GatewayAPI(
     host=args.majortomhost,
     gateway_token=args.gatewaytoken,
     basic_auth=args.basicauth,
@@ -69,19 +69,19 @@ major_tom = MajorTom(
 )
 
 logger.debug("Connecting to MajorTom")
-asyncio.ensure_future(major_tom.connect_with_retries())
+asyncio.ensure_future(gateway.connect_with_retries())
 
 logger.debug("Sending Command Definitions")
-asyncio.ensure_future(major_tom.update_command_definitions(
+asyncio.ensure_future(gateway.update_command_definitions(
     system=demo_sat.name,
     definitions=demo_sat.definitions))
 
 if args.telemetry == "nominal":
     logger.debug("Starting Nominal Telemetry")
-    asyncio.ensure_future(demo_sat.telemetry.nominal(duration=30000000, major_tom=major_tom))
+    asyncio.ensure_future(demo_sat.telemetry.nominal(duration=30000000, major_tom=gateway))
 elif args.telemetry == "error":
     logger.debug("Starting Error Telemetry")
-    asyncio.ensure_future(demo_sat.telemetry.error(duration=30000000, major_tom=major_tom))
+    asyncio.ensure_future(demo_sat.telemetry.error(duration=30000000, major_tom=gateway))
 elif args.telemetry == None:
     pass
 else:
