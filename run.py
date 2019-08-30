@@ -78,10 +78,10 @@ asyncio.ensure_future(gateway.update_command_definitions(
 
 if args.telemetry == "nominal":
     logger.debug("Starting Nominal Telemetry")
-    asyncio.ensure_future(demo_sat.telemetry.nominal(duration=30000000, major_tom=gateway))
+    asyncio.ensure_future(demo_sat.telemetry.nominal(duration=30000000, gateway=gateway))
 elif args.telemetry == "error":
     logger.debug("Starting Error Telemetry")
-    asyncio.ensure_future(demo_sat.telemetry.error(duration=30000000, major_tom=gateway))
+    asyncio.ensure_future(demo_sat.telemetry.error(duration=30000000, gateway=gateway))
 elif args.telemetry == None:
     pass
 else:
