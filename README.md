@@ -40,11 +40,11 @@ Access this by running the following command from the repository's top level dir
 
 If you are using this on a __Trial__ of Major Tom, you will most likely run this command:
 
-```python3 run.py -m app.majortom.cloud -g {YOUR-GATEWAY-AUTHENTICATION-TOKEN}```
+```python3 run.py app.majortom.cloud {YOUR-GATEWAY-AUTHENTICATION-TOKEN}```
 
 For Example:
 
-```python3 run.py -m app.majortom.cloud -g 4b1273101901225a9d3df4882884b26e139cdeb49d2c1a50a51baf66c3a42623```
+```python3 run.py app.majortom.cloud 4b1273101901225a9d3df4882884b26e139cdeb49d2c1a50a51baf66c3a42623```
 
 Once you run this, should should see Major Tom respond with a `hello` message:
 
