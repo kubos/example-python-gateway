@@ -9,11 +9,15 @@ logger = logging.getLogger(__name__)
 
 # Set up command line arguments
 parser = argparse.ArgumentParser()
+# Required Args
 parser.add_argument(
     "majortomhost",
     help='Major Tom host name. Can also be an IP address for local development/on prem deployments.')
-parser.add_argument("gatewaytoken",
-                    help='Gateway Token used to authenticate the connection. Look this up in Major Tom under the gateway page for the gateway you are trying to connect.')
+parser.add_argument(
+    "gatewaytoken",
+    help='Gateway Token used to authenticate the connection. Look this up in Major Tom under the gateway page for the gateway you are trying to connect.')
+
+# Optional Args and Flags
 parser.add_argument(
     '-b',
     '--basicauth',
@@ -21,6 +25,7 @@ parser.add_argument(
 parser.add_argument(
     '-l',
     '--loglevel',
+    choices=["info", "error"],
     help='Log level for the logger. Defaults to "debug", can be set to "info", or "error".')
 parser.add_argument(
     '--http',
