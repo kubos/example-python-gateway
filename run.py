@@ -2,41 +2,35 @@ import logging
 import asyncio
 import time
 import argparse
-from major_tom.major_tom import MajorTom
+from majortom_gateway import GatewayAPI
 from demo.demo_sat import DemoSat
 
 logger = logging.getLogger(__name__)
 
 # Set up command line arguments
 parser = argparse.ArgumentParser()
-parser._action_groups.pop()
-required = parser.add_argument_group('required arguments')
-optional = parser.add_argument_group('optional arguments')
-required.add_argument(
-    '-m',
-    '--majortomhost',
-    help='Major Tom host name. Can also be an IP address for local development/on prem deployments.',
-    required=True)
-required.add_argument(
-    '-g',
-    '--gatewaytoken',
-    help='Gateway Token used to authenticate the connection. Look this up in Major Tom under the gateway page for the gateway you are trying to connect.',
-    required=True)
-optional.add_argument(
+# Required Args
+parser.add_argument(
+    "majortomhost",
+    help='Major Tom host name. Can also be an IP address for local development/on prem deployments.')
+parser.add_argument(
+    "gatewaytoken",
+    help='Gateway Token used to authenticate the connection. Look this up in Major Tom under the gateway page for the gateway you are trying to connect.')
+
+# Optional Args and Flags
+parser.add_argument(
     '-b',
     '--basicauth',
-    help='Basic Authentication credentials. Not required unless BasicAuth is active on the Major Tom instance. Must be in the format "username:password".',
-    required=False)
-optional.add_argument(
+    help='Basic Authentication credentials. Not required unless BasicAuth is active on the Major Tom instance. Must be in the format "username:password".')
+parser.add_argument(
     '-l',
     '--loglevel',
-    help='Log level for the logger. Defaults to "debug", can be set to "info", or "error".',
-    required=False)
-optional.add_argument(
-    '-t',
-    '--telemetry',
-    help='If included, starts the telemetry beacon for the demo spacecraft automatically in the mode indicated. Can be "nominal" or "error".',
-    required=False)
+    choices=["info", "error"],
+    help='Log level for the logger. Defaults to "debug", can be set to "info", or "error".')
+parser.add_argument(
+    '--http',
+    help="If included, you can instruct the gateway to connect without encryption. This is only to support on prem deployments or for local development when not using https.",
+    action="store_true")
 
 args = parser.parse_args()
 
@@ -60,32 +54,21 @@ logger.debug("Setting up Demo Satellite")
 demo_sat = DemoSat(name="Space Oddity")
 
 logger.debug("Setting up MajorTom")
-major_tom = MajorTom(
+gateway = GatewayAPI(
     host=args.majortomhost,
     gateway_token=args.gatewaytoken,
     basic_auth=args.basicauth,
     command_callback=demo_sat.command_callback,
-    cancel_callback=demo_sat.cancel_callback
-)
+    cancel_callback=demo_sat.cancel_callback,
+    http=args.http)
 
 logger.debug("Connecting to MajorTom")
-asyncio.ensure_future(major_tom.connect_with_retries())
+asyncio.ensure_future(gateway.connect_with_retries())
 
 logger.debug("Sending Command Definitions")
-asyncio.ensure_future(major_tom.update_command_definitions(
+asyncio.ensure_future(gateway.update_command_definitions(
     system=demo_sat.name,
     definitions=demo_sat.definitions))
-
-if args.telemetry == "nominal":
-    logger.debug("Starting Nominal Telemetry")
-    asyncio.ensure_future(demo_sat.telemetry.nominal(duration=30000000, major_tom=major_tom))
-elif args.telemetry == "error":
-    logger.debug("Starting Error Telemetry")
-    asyncio.ensure_future(demo_sat.telemetry.error(duration=30000000, major_tom=major_tom))
-elif args.telemetry == None:
-    pass
-else:
-    raise ValueError(f"Invalid telemetry type: {args.telemetry}")
 
 logger.debug("Starting Event Loop")
 loop.run_forever()

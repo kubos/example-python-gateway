@@ -46,7 +46,7 @@ class DemoTelemetry:
             }
         }
 
-    async def generate_telemetry(self, duration, major_tom, type="NOMINAL"):
+    async def generate_telemetry(self, duration, gateway, type="NOMINAL"):
 
         if type == "ERROR":
             self.telemetry['battery']['voltage']['value'] = 2.0
@@ -56,7 +56,7 @@ class DemoTelemetry:
             if type == "NOMINAL":
                 self.__nominal()
             elif type == "ERROR":
-                self.__error(major_tom=major_tom)
+                self.__error(gateway=gateway)
             else:
                 raise(ValueError(f'Telemetry type must be NOMINAL or ERROR, not {type}'))
 
@@ -68,7 +68,7 @@ class DemoTelemetry:
                     "message": "Stopping Telemetry beacon, entering safemode.",
                     "timestamp": int(time.time() * 1000)
                 }
-                asyncio.ensure_future(major_tom.transmit_events(events=[event]))
+                asyncio.ensure_future(gateway.transmit_events(events=[event]))
                 break
             metrics = []
             for subsystem in self.telemetry:
@@ -88,7 +88,7 @@ class DemoTelemetry:
                 "timestamp": int(time.time() * 1000)
 
             })
-            asyncio.ensure_future(major_tom.transmit_metrics(metrics=metrics))
+            asyncio.ensure_future(gateway.transmit_metrics(metrics=metrics))
             await asyncio.sleep(1)
 
     def __nominal(self):
@@ -100,7 +100,7 @@ class DemoTelemetry:
                     min=self.telemetry[subsystem][metric]["min"],
                     max=self.telemetry[subsystem][metric]["max"])
 
-    def __error(self, major_tom):
+    def __error(self, gateway):
         for subsystem in self.telemetry:
             for metric in self.telemetry[subsystem]:
                 self.telemetry[subsystem][metric]["value"] = self.__telemetry_stepper(
@@ -122,7 +122,7 @@ class DemoTelemetry:
                 "message": f"Battery level below critical threshold: {self.telemetry['battery']['voltage']['value']}",
                 "timestamp": int(time.time() * 1000)
             }
-            asyncio.ensure_future(major_tom.transmit_events(events=[event]))
+            asyncio.ensure_future(gateway.transmit_events(events=[event]))
             self.alerted = True
         elif self.alerted and self.telemetry['battery']['voltage']['value'] >= 3.2:
             event = {
@@ -132,7 +132,7 @@ class DemoTelemetry:
                 "message": f"Battery level back to nominal: {self.telemetry['battery']['voltage']['value']}",
                 "timestamp": int(time.time() * 1000)
             }
-            asyncio.ensure_future(major_tom.transmit_events(events=[event]))
+            asyncio.ensure_future(gateway.transmit_events(events=[event]))
             self.alerted = False
 
     def __telemetry_stepper(self, current_value, step, min, max):
