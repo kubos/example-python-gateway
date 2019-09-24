@@ -34,13 +34,14 @@ Once you add the Gateway, you'll need the __Authentication Token__ to connect th
 ## Connect the Gateway
 
 The `-h` (help) argument explains how to run the demo locally after you've set up the environment.
+We __highly__ recommend reading the help menu, as it does contain all the detailed argument information. 
 Access this by running the following command from the repository's top level directory:
 
 ```python3 run.py -h```
 
-If you are using this on a __Trial__ of Major Tom, you will most likely run this command:
+For most Major Tom users, this will be your command line syntax: 
 
-```python3 run.py app.majortom.cloud {YOUR-GATEWAY-AUTHENTICATION-TOKEN}```
+```python3 run.py {MAJOR-TOM-HOSTNAME} {YOUR-GATEWAY-AUTHENTICATION-TOKEN}```
 
 For Example:
 
@@ -49,6 +50,15 @@ For Example:
 Once you run this, should should see Major Tom respond with a `hello` message:
 
 ```2019-08-19 12:04:46,151 - major_tom.major_tom - INFO - Major Tom says hello: {'type': 'hello', 'hello': {'mission': 'Demo'}}```
+
+### Note on Major Tom Deployment Environments
+
+If you have Basic Authentication enabled on your deployment (usually true if you're accessing it over `your-org.majortom.cloud`), 
+please make sure to include the argument for providing those credentials. 
+Run `python3 run.py -h` for the full information on how to include it.
+
+If you are running the on-prem version of Major Tom, 
+you'll need to include the `--http` flag, as we currently do not support https for on prem. 
 
 ## What does this Demo Satellite do?
 
