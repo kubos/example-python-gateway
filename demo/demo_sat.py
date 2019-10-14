@@ -29,26 +29,47 @@ class DemoSat:
             "ping": {
                 "display_name": "Ping",
                 "description": "Ping",
+                "tags": ["testing", "operations"],
                 "fields": []
             },
             "error": {
                 "display_name": "Error Command",
                 "description": "Always errors to show the error process.",
+                "tags": ["testing"],
                 "fields": []
             },
             "spacecraft_error": {
                 "display_name": "Critical Event Command",
                 "description": "Causes a critical error on the Spacecraft.",
+                "tags": ["testing"],
                 "fields": []
             },
             "update_file_list": {
                 "display_name": "Update File List",
                 "description": "Downlinks the latest file list from the spacecraft.",
+                "tags": ["files", "operations"],
                 "fields": []
+            },
+            "uplink_file": {
+                "display_name": "Uplink File",
+                "description": "Uplink a staged file to the spacecraft.",
+                "tags": ["files"],
+                "fields": [
+                    {"name": "gateway_download_path", "type": "string"}
+                ]
+            },
+            "downlink_file": {
+                "display_name": "Downlink File",
+                "description": "Downlink an image from the Spacecraft.",
+                "tags": ["files"],
+                "fields": [
+                    {"name": "filename", "type": "string"}
+                ]
             },
             "telemetry": {
                 "display_name": "Start Telemetry Beacon",
                 "description": "Commands the spacecraft to beacon Health and Status Telemetry",
+                "tags": ["operations", "testing"],
                 "fields": [
                     {"name": "mode", "type": "string", "range": ["NOMINAL", "ERROR"]},
                     {"name": "duration", "type": "integer", "default": 300}
@@ -57,26 +78,14 @@ class DemoSat:
             "connect": {
                 "display_name": "Establish RF Lock",
                 "description": "Points antennas and starts broadcasting carrier signal to establish RF lock with the spacecraft.",
+                "tags": ["operations"],
                 "fields": []
             },
             "safemode": {
                 "display_name": "Safemode Command",
                 "description": "Commands the spacecraft into safemode, shutting down all non-essential systems.",
+                "tags": ["operations", "testing"],
                 "fields": []
-            },
-            "uplink_file": {
-                "display_name": "Uplink File",
-                "description": "Uplink a staged file to the spacecraft.",
-                "fields": [
-                    {"name": "gateway_download_path", "type": "string"}
-                ]
-            },
-            "downlink_file": {
-                "display_name": "Downlink File",
-                "description": "Downlink an image from the Spacecraft.",
-                "fields": [
-                    {"name": "filename", "type": "string"}
-                ]
             }
         }
 
