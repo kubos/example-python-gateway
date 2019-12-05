@@ -68,7 +68,7 @@ Now that you've connected the gateway, it will automatically create a new satell
 
 You can now issue those commands to the satellite through the connected Gateway,
 which accomplish a wide variety of simulated tasks.
-Open each command and reach it's description to understand what it does!
+Open each command and read its description to understand what it does!
 
 To find these commands, go to Major Tom under the mission you originally created and look up Space Oddity in the Satellites Menu:  
 
