@@ -9,15 +9,14 @@ or [come talk to us on Slack](https://slack.kubos.com) and we'll get you sorted 
 
 ## Gateway Package
 
-This demo gateway uses the [Major Tom Gateway Package](####).
-If you are looking to use this gateway as an example to write your own,
-check out the [package repository](https://github.com/kubos/majortom_gateway_package) for how to handle messages to/from Major Tom.
+This demo gateway uses the [Major Tom Gateway Package](https://pypi.org/project/majortom-gateway/).
+If you are looking to use this gateway as an example to write your own, use that package to handle messages to/from Major Tom.
 
 ## Local Setup
 
 Clone locally to use it with Major Tom.
 
-Requires Python 3.7+ and package requirements are in `requirements.txt`. Install with the command:
+Requires Python 3.6+ and package requirements are in `requirements.txt`. Install with the command:
 
 ```pip3 install -r requirements.txt```
 
@@ -34,12 +33,12 @@ Once you add the Gateway, you'll need the __Authentication Token__ to connect th
 ## Connect the Gateway
 
 The `-h` (help) argument explains how to run the demo locally after you've set up the environment.
-We __highly__ recommend reading the help menu, as it does contain all the detailed argument information. 
+We __highly__ recommend reading the help menu, as it does contain all the detailed argument information.
 Access this by running the following command from the repository's top level directory:
 
 ```python3 run.py -h```
 
-For most Major Tom users, this will be your command line syntax: 
+For most Major Tom users, this will be your command line syntax:
 
 ```python3 run.py {MAJOR-TOM-HOSTNAME} {YOUR-GATEWAY-AUTHENTICATION-TOKEN}```
 
@@ -53,18 +52,23 @@ Once you run this, should should see Major Tom respond with a `hello` message:
 
 ### Note on Major Tom Deployment Environments
 
-If you have Basic Authentication enabled on your deployment (usually true if you're accessing it over `your-org.majortom.cloud`), 
-please make sure to include the argument for providing those credentials. 
+If you have Basic Authentication enabled on your deployment
+(usually true if you're accessing it over `your-org.majortom.cloud`),
+you'll need to enter those credentials to connect.
+Enter basicauth login credentials for your Major Tom deployment (if it’s active) with `-b {username}:{password}`,
+for example: `-b kubos:password123`.
 Run `python3 run.py -h` for the full information on how to include it.
 
-If you are running the on-prem version of Major Tom, 
-you'll need to include the `--http` flag, as we currently do not support https for on prem. 
+If you are running the on-prem version of Major Tom,
+you'll need to include the `--http` flag, as we currently do not support https for on prem.
 
 ## What does this Demo Satellite do?
 
 Now that you've connected the gateway, it will automatically create a new satellite named "Space Oddity" and load in command definitions for it.
 
-You can now issue those commands to the satellite through the connected Gateway, which accomplish a wide variety of simulated tasks, all of which are explained by the description under each command.
+You can now issue those commands to the satellite through the connected Gateway,
+which accomplish a wide variety of simulated tasks.
+Open each command and read its description to understand what it does!
 
 To find these commands, go to Major Tom under the mission you originally created and look up Space Oddity in the Satellites Menu:  
 
