@@ -1,0 +1,77 @@
+{
+  "definitions": {
+    "ping": {
+        "display_name": "1. Ping",
+        "description": "A simple ping. The Gateway should pretend to contact the satellite and return a pong.",
+        "tags": ["testing", "operations"],
+        "fields": []
+    },
+    "all_transitions" : {
+        "display_name": "2. Show All Transitions",
+        "description": "This command will go through all of the possible command states. Watch the Communications panel on the dashboard to see the changes.",
+        "tags": ["testing", "operations"],
+        "fields": []
+    },
+    "ping_through_leaf_network": {
+        "display_name": "3. Leaf Network Ping",
+        "description": "Commands the Gateway to send a ping through the Leaf Groundstation Network. If credentials are properly configured for the Leaf sandbox, it will echo back.",
+        "tags": ["testing", "operations"],
+        "fields": []
+    },
+    "telemetry": {
+        "display_name": "4. Start Telemetry Beacon",
+        "description": "Commands the spacecraft to beacon Health and Status Telemetry. After executing this command, you can see the telemetry by navigating to the Analytics Page",
+        "tags": ["operations", "testing"],
+        "fields": [
+            {"name": "mode", "type": "string", "range": ["NOMINAL", "ERROR"]},
+            {"name": "duration", "type": "integer", "default": 300}
+        ]
+    },
+    "error": {
+        "display_name": "Error Command",
+        "description": "Always errors to show the error process.",
+        "tags": ["testing"],
+        "fields": []
+    },
+    "spacecraft_error": {
+        "display_name": "Critical Event Command",
+        "description": "Causes a critical error on the Spacecraft.",
+        "tags": ["testing"],
+        "fields": []
+    },
+    "update_file_list": {
+        "display_name": "Update File List",
+        "description": "Downlinks the latest file list from the spacecraft.",
+        "tags": ["files", "operations"],
+        "fields": []
+    },
+    "uplink_file": {
+        "display_name": "Uplink File",
+        "description": "Uplink a staged file to the spacecraft.",
+        "tags": ["files"],
+        "fields": [
+            {"name": "gateway_download_path", "type": "string"}
+        ]
+    },
+    "downlink_file": {
+        "display_name": "Downlink File",
+        "description": "Downlink an image from the Spacecraft.",
+        "tags": ["files"],
+        "fields": [
+            {"name": "filename", "type": "string"}
+        ]
+    },
+    "connect": {
+        "display_name": "Establish RF Lock",
+        "description": "Points antennas and starts broadcasting carrier signal to establish RF lock with the spacecraft.",
+        "tags": ["operations"],
+        "fields": []
+    },
+    "safemode": {
+        "display_name": "Safemode Command",
+        "description": "Commands the spacecraft into safemode, shutting down all non-essential systems.",
+        "tags": ["operations", "testing"],
+        "fields": []
+    }
+  }
+}

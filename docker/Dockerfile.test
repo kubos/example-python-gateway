@@ -1,0 +1,14 @@
+FROM python:3.8
+
+ENV TERM xterm-256color
+ENV PYTHONDONTWRITEBYTECODE="true"
+ENV PYTHONPATH="/app"
+
+WORKDIR /app
+
+COPY *requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+RUN pip install -e majortom_gateway_api
+
+CMD ["pytest"]
