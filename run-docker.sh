@@ -15,7 +15,7 @@ Example:
   ./run-docker.sh staging2.testing.majortom.cloud/ df907812f7007029ad895a594d55bc08fa3745b0b1bb28094dd4c83d2957f714 -b staging2:STAGING_PASSWORD
 
   # Example for local
-  ./run-docker.sh docker.host.internal:3001 df907812f7007029ad895a594d55bc08fa3745b0b1bb28094dd4c83d2957f714 --http
+  ./run-docker.sh host.docker.internal:3001 df907812f7007029ad895a594d55bc08fa3745b0b1bb28094dd4c83d2957f714 --http
 
 ========================================================================
 
