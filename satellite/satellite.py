@@ -105,8 +105,18 @@ class Satellite:
                     "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
                 })
 
+                if self.command.fields['show_hidden']:
+                    for i in range(1, randint(1, 3)):
+                        self.file_list.append({
+                            "name": f'.thumb-{(len(self.file_list)+1):04d}.png',
+                            "size": randint(200, 300),
+                            "timestamp": int(time.time() * 1000) + i*10,
+                            "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
+                        })
+
             self.check_cancelled(id=command.id)
             logger.info("Files: {}".format(self.file_list))
+
             r = Timer(0.1, gateway.update_file_list, kwargs={"system":self.name, "files":self.file_list})
             r.start()
             time.sleep(10)

@@ -37,7 +37,9 @@
         "display_name": "6. Update File List",
         "description": "Gets the latest list of downloadable files from the spacecraft.",
         "tags": ["files", "operations"],
-        "fields": []
+        "fields": [
+            {"name": "show_hidden", "type": "boolean", "default": false }
+        ]
     },
     "uplink_file": {
         "display_name": "Uplink File",
