@@ -14,8 +14,7 @@ except ImportError:
 
 from majortom_gateway.command import Command
 from majortom_gateway import gateway_api
-from satellite import Satellite
-from transform import stubs
+from satellite import Satellite, stubs
 from gateway import Gateway
 
 class TypeMatcher:
@@ -33,7 +32,7 @@ def callback_mock():
     return fn
 
 
-#@pytest.mark.asyncio examplej test
+#@pytest.mark.asyncio example test
 #async def test_calls_transit_callback(callback_mock):
 #    gw = GatewayAPI("host", "gateway_token", transit_callback=callback_mock)
 #    # ToDo: Update this example message
@@ -56,13 +55,13 @@ class TestCommandDefinitions(unittest.TestCase):
     def test_process_command(self):
         system = "Example Flatsat" # Match 'system' identifier with Gateway CommandDef
         json_bytes = """{
-            "type": "command",
-            "id": "update_file_list",
+            "type": "update_file_list",
+            "id": 18,
             "system": "Example FlatSat", 
             "display_name": "Update File List",
             "tags": ["files", "operations"],
             "fields": [
-                {"name": "show_hidden", "type": "boolean", "value": true }
+                {"name": "show_hidden", "type": "boolean", "value": "true" }
             ]
         }"""
         jl = json.loads(json_bytes)
@@ -74,7 +73,7 @@ class TestCommandDefinitions(unittest.TestCase):
 
         with open('satellite/example_commands.json','r') as f:
             command_defs = json.loads(f.read())
-        asyncio.ensure_future(self.gw_api.update_command_definitions(
+        asyncio.run(self.gw_api.update_command_definitions(
             system="Example FlatSat",
             definitions=command_defs["definitions"]))
 

@@ -145,7 +145,7 @@ class Satellite:
 
         else:
             # We'd want to generate an error if the command wasn't found.
-            logger.warn(f"Satellite does not recognize command {command.type}")
+            logger.warning(f"Satellite does not recognize command {command.type}")
             errors = [f"Command {command.type} not found on Satellite."]
             gateway.fail_command(command.id, errors=errors)
 
