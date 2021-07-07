@@ -2,9 +2,9 @@ import logging
 import time
 from asgiref.sync import async_to_sync
 from random import randint
-from . import stubs
-from .statuses import CommandStatus
-from satellite.satellite import Satellite
+from transform import stubs
+from commands import CommandStatus
+from satellite import Satellite
 
 logger = logging.getLogger(__name__)
 

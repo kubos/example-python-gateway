@@ -4,12 +4,14 @@ This is a fake satellite.
 It takes the place of a simulator, flatsat, engineering model, or real satellite.
 '''
 import time
-from threading import Timer
-from gateway import stubs
-from gateway.statuses import CommandStatus
-from satellite.telemetry import FakeTelemetry
-from random import randint
 import logging
+
+from random import randint
+from threading import Timer
+
+from transform import stubs
+from commands import CommandStatus
+from .telemetry import FakeTelemetry
 
 logger = logging.getLogger(__name__)
 
