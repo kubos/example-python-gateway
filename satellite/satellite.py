@@ -5,9 +5,12 @@ It takes the place of a simulator, flatsat, engineering model, or real satellite
 '''
 import time
 import logging
+import asyncio
+import majortom_gateway
 
 from random import randint
 from threading import Timer
+from distutils.util import strtobool
 
 from transform import stubs
 from commands import CommandStatus
@@ -75,7 +78,7 @@ class Satellite:
             duration =  command.fields['duration']
             mode = command.fields['mode']
             if errors:
-                gateway.fail_command(command.id, errors)
+                gateway.api.fail_command(command.id, errors)
             else:
                 msg = f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."
                 gateway.set_command_status(command.id, CommandStatus.COMPLETED, payload=msg)
@@ -99,6 +102,8 @@ class Satellite:
             Certain commands are 'known' to Major Tom, and can appear in more convenient places in the UI because of that. 
             See the documentation for a full list of such commands.
             """
+            # Handle potential API returning 'true' or 'false' instead of proper boolean value.
+            show_hidden = bool(strtobool(command.fields['show_hidden']))
             for i in range(1, randint(2, 4)):
                 self.file_list.append({
                     "name": f'Payload-Image-{(len(self.file_list)+1):04d}.png',
@@ -107,26 +112,30 @@ class Satellite:
                     "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
                 })
 
-                if self.command.fields['show_hidden']:
-                    for i in range(1, randint(1, 3)):
-                        self.file_list.append({
-                            "name": f'.thumb-{(len(self.file_list)+1):04d}.png',
-                            "size": randint(200, 300),
-                            "timestamp": int(time.time() * 1000) + i*10,
-                            "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
-                        })
+            if show_hidden:
+                for i in range(1, randint(1, 3)):
+                    self.file_list.append({
+                        "name": f'.thumb-{(len(self.file_list)+1):04d}.png',
+                        "size": randint(200, 300),
+                        "timestamp": int(time.time() * 1000) + i*10,
+                        "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
+                    })
 
             self.check_cancelled(id=command.id)
             logger.info("Files: {}".format(self.file_list))
 
-            r = Timer(0.1, gateway.update_file_list, kwargs={"system":self.name, "files":self.file_list})
-            r.start()
-            time.sleep(10)
+            binary = stubs.translate_command_to_binary(command)
+            packetized = stubs.packetize(binary)
+            encrypted = stubs.encrypt(packetized)    
+
             self.check_cancelled(id=command.id)
-            gateway.set_command_status(
-                command_id=command.id, 
-                status=CommandStatus.COMPLETED, 
-                payload="Updated Remote File List")
+            asyncio.run(gateway.api.update_file_list(system=self.name, files=self.file_list))
+
+            self.check_cancelled(id=command.id)
+            asyncio.run(gateway.api.complete_command(
+                    command_id=command.id,
+                    output="Updated Remote File List",
+                ))
 
         elif command.type == "error":
             """ Simulates a command erroring out. """

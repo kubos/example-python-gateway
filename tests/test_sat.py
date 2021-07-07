@@ -78,6 +78,9 @@ class TestCommandDefinitions(unittest.TestCase):
             system="Example FlatSat",
             definitions=command_defs["definitions"]))
 
+        self.gateway.command_callback(cmd, self.gw_api)
+        #...
+        # Profit?
         resp = "" 
-        self.gateway.satellite_response(cmd_bytes, resp)
-        print("command resp: {}", resp)
+        #self.gateway.satellite_response(cmd_bytes, resp)
+        #print("command resp: {}", resp)
