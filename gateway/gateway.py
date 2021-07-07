@@ -1,13 +1,12 @@
 import logging
 import time
-from asgiref.sync import async_to_sync
 from random import randint
-from transform import stubs
-from commands import CommandStatus
-from satellite import Satellite
+from asgiref.sync import async_to_sync
+
+from .statuses import CommandStatus
+from satellite import Satellite, stubs
 
 logger = logging.getLogger(__name__)
-
 
 class Gateway:
     def __init__(self, *args, **kwargs):

@@ -12,8 +12,7 @@ from random import randint
 from threading import Timer
 from distutils.util import strtobool
 
-from transform import stubs
-from commands import CommandStatus
+from . import stubs
 from .telemetry import FakeTelemetry
 
 logger = logging.getLogger(__name__)
@@ -81,7 +80,8 @@ class Satellite:
                 gateway.api.fail_command(command.id, errors)
             else:
                 msg = f"Started Telemetry Beacon in mode: {command.fields['mode']} for {command.fields['duration']} seconds."
-                gateway.set_command_status(command.id, CommandStatus.COMPLETED, payload=msg)
+                command_completed = "completed"
+                gateway.set_command_status(command.id, command_completed, payload=msg)
                 timeout = time.time() + duration
                 while time.time() < timeout:
                     self.check_cancelled(id=command.id)
