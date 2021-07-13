@@ -11,22 +11,22 @@ To start quickly, if you have docker, use `run-docker.sh` with the host and gate
 ./run-docker.sh YOUR_APP.majortom.com EXAMPLE15d8321821cbb3dde56b367c2346d766468d288b39b301254ee2ac
 ```
 
-This creates an Example Satellite and populates commands that you can use to interact with the Gateway.
+This creates an Example Satellite and populates commands that you can use to interact with the Gateway. 
+
+(A Gateway Token is acquired by creating a Gateway in the Major Tom user interface.)
 
 ## Background
 
-Gateways are asynchronous by nature -- the primary interface is a bi-directional websocket. Major Tom sends your Gateway messages and the Gateway API executes a method based on the type of message. 
-
-However, async Python can sometimes be challenging to write. So we created our API to support both sync and async programming styles.
+Gateways are asynchronous by nature -- the primary interface is a bi-directional websocket. Actions taken by the operator are sent from Major Tom to your Gateway as messages. The [underlying library](https://github.com/kubos/majortom_gateway_package) then executes methods based on the type of message. However, async Python can sometimes be challenging to write. So we created our API to support both sync and async programming styles.
 
 ## Sync Gateway
 
-[This Gateway](./gateway/gateway.py) serves as an example of interacting with Major Tom using synchronous Python and the Gateway API. It creates an "Example Flatsat," which is separated in the code to show where the Gateway ends and the satellite begins. The run script will create this flatsat and populate it with commands. Once the Gateway is connected, you should execute those commands to see how the Gateway and satellite respond.
+[This Gateway](./gateway/gateway.py) serves as an example of interacting with Major Tom using synchronous Python and the Gateway API. It creates an "Example Flatsat," which is separated in the code to show where the Gateway ends and the satellite begins. The run script will create this flatsat and populate it with commands. Once the Gateway is connected, you should execute those commands to see how the Gateway and satellite interact.
 
 ## Async Gateway
-[This Gateway](./demo/demo_sat.py) serves as **both** an example of interacting with Major Tom using the Gateway API and a demo Satellite which responds to commands, generates telemetry, and uplinks/downlinks files.
+[This Gateway](./demo/demo_sat.py) serves as **both** an example of interacting with Major Tom using the async API and an embedded demo Satellite which responds to commands, generates telemetry, and uplinks/downlinks files. This Gateway is older, more robust, and can perform more actions than the sync Gateway, but there is not a clear separation between the Gateway code and the (faked) satellite code.
 
-If you have any issues setting up/running this demo,
+If you have any issues setting up/running these demos,
 either [make an issue](https://github.com/kubos/example-python-gateway/issues/new) on this repository
 or [come talk to us on Slack](https://slack.kubos.com) and we'll get you sorted out!
 
@@ -110,3 +110,15 @@ Add cards and play with their settings to see what you can do!
 
 Now that you understand how the integration works, try augmenting the Demo Satellite to actually communicate with your hardware/software!
 Then you can begin controlling and monitoring your own spacecraft.
+
+## Development and Test
+
+To run tests continuously as you develop:
+```
+./bin/docker-testw.sh
+```
+
+To run a development instance (which uses a local python-gateway-package)
+```
+./bin/run-dev.sh [args]
+```
