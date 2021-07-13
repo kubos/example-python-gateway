@@ -1,3 +1,9 @@
 websockets
 requests
-majortom-gateway
+majortom_gateway>=0.0.10
+mock>=4.0.3
+pytest-asyncio
+pytest-only>=1.2.2
+pytest-watch>=4.2.0
+pytest>=6.2.2
+asgiref
