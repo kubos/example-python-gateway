@@ -28,26 +28,20 @@
         ]
     },
     "error": {
-        "display_name": "Error Command",
+        "display_name": "5. Error Command",
         "description": "Always errors to show the error process.",
         "tags": ["testing"],
         "fields": []
     },
-    "spacecraft_error": {
-        "display_name": "Critical Event Command",
-        "description": "Causes a critical error on the Spacecraft.",
-        "tags": ["testing"],
-        "fields": []
-    },
     "update_file_list": {
-        "display_name": "Update File List",
-        "description": "Downlinks the latest file list from the spacecraft.",
+        "display_name": "6. Update File List",
+        "description": "Gets the latest list of downloadable files from the spacecraft.",
         "tags": ["files", "operations"],
         "fields": []
     },
     "uplink_file": {
         "display_name": "Uplink File",
-        "description": "Uplink a staged file to the spacecraft.",
+        "description": "Uplink a file from your computer to the spacecraft.",
         "tags": ["files"],
         "fields": [
             {"name": "gateway_download_path", "type": "string"}

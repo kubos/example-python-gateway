@@ -13,7 +13,7 @@ class Gateway:
     def __init__(self, *args, **kwargs):
         # For simplicity, our gateway is going to talk with a fake satellite. 
         # We'll instantiate that now.
-        # For a flatsat, engineering model, or company-owned groundstation, this is where you would set up 
+        # For a flatsat, engineering model, or company-owned groundstation, this is where you might set up 
         # your communication to the respective device(s).
         # For a Ground Station Network, support is included in the transmit_blob() and receive_blob() methods.
 
@@ -48,7 +48,7 @@ class Gateway:
             # We'll go through each of the command states. After sending this command from Major Tom, you'll
             # want to monitor the status of it on the Communications Card. The status will change 
             # according to the code below.
-            # Note that 2 progress bars can be shown on any state ending in -ing.
+            # Note that 2 separate progress bars can be shown on any state ending in -ing.
             self.set_command_status(command.id, CommandStatus.PREPARING)
             time.sleep(4)
             self.set_command_status(command.id, CommandStatus.EXECUTING)
@@ -85,7 +85,7 @@ class Gateway:
             context = {
                 # We use all zeroes for the Leaf sandbox. Eventually, this will
                 # be replaced with a field for Pass ID 
-                "norad_id": "00000",  
+                "norad_id": "00000",
             }
             self.set_command_status(command.id, CommandStatus.UPLINKING)
             async_to_sync(self.api.transmit_blob)(blob=encrypted, context=context)
@@ -145,18 +145,24 @@ class Gateway:
         # When an operator or script attempts to cancel a command, this function receives the message.
 
         # Take steps to cancel the command. 
-        self.cancel_command(command_id)
+        success = self.cancel_command(command_id)
 
-        self.set_command_status(command_id, CommandStatus.CANCELLED)
+        # Let the operator know the command was cancelled
+        if success:
+            self.set_command_status(command_id, CommandStatus.CANCELLED)
 
     def cancel_command(self, command_id):
         # Stub
-        pass
+        return True
+
+    def update_file_list(self, system, files):
+        async_to_sync(self.api.update_file_list)(system=system, files=files)
 
     def received_blob_callback(self, blob, context, *args, **kwargs):
         # When we receive data from a Groundstation Network, this callback is called.
-        # Context contains information around the conditions under which the data were obtained -- things like a Pass ID, Norad ID, or similar.
-        # Metadata is traceability-related data, such as timestamps.
+        # The data comes in the "blob" argument.
+        # The "context" argument contains information around the conditions under which the data were obtained -- things like a Pass ID, Norad ID, or similar.
+        # An optional "metadata" argument may contain traceability-related data, such as timestamps or internal processing steps.
         logger.info("Got binary from groundstation network!")
         logger.info("Context was:" + str(context))
         # logger.info("Metadata was:" + str(metadata))
@@ -180,6 +186,7 @@ class Gateway:
         async_to_sync(self.api.transmit_metrics)(metrics=metrics)
 
     def set_command_status(self, command_id, status, **kwargs):
+        ''' A helper method for updating Major Tom's display with a particular status for a specific command. '''
         if self.api is None:
             raise Exception("Websocket API must be set.")
         logger.info(f"Setting command #{command_id} status to {status}")
@@ -192,6 +199,7 @@ class Gateway:
         )
 
     def set_progress_bar(self, command_id, state, status, progress_dict):
+        ''' A helper method for updating Major Tom's display with a progress bar for a particular command. '''
         if self.api is None:
             raise Exception("Websocket API must be set.")
         info = {"status": status}
@@ -203,19 +211,8 @@ class Gateway:
         )
 
     def fail_command(self, command_id, errors):
-        ''' errors must be a list '''
+        ''' A helper method to fail a command. The 'errors' argument must be a list '''
         self.set_command_status(command_id, CommandStatus.FAILED, errors=errors)
-
-    def __error(self, message, gateway):
-        logger.warning(message)
-        event = {
-            "system": self.satellite.name,
-            "type": "Tranciever Error",
-            "level": "error",
-            "message": message,
-            "timestamp": int(time.time() * 1000)
-        }
-        gateway.transmit_events(events=[event])
 
     def error_callback(self, message, *args, **kwargs):
         # It is important to implement this callback, as this is the main communication channel when Major Tom detects errors.
@@ -225,7 +222,7 @@ class Gateway:
         logger.warn(message)
 
     def transit_callback(self, message, *args, **kwargs):
-        # You can trigger code on the beginning of a pass.
+        # This callback can be used to trigger code at the beginning of a pass.
         transit = message["transit"]
         logger.info(f"Ahoy {transit['satellite_name']} from {transit['ground_station_name']}!")
 

@@ -42,7 +42,7 @@ class Satellite:
         gateway.satellite_response(encrypted, response)
 
     def check_cancelled(self, id):
-        ''' Checks to see if a command-in-progress has been cancelled '''
+        ''' Checks to see if a command-in-progress has been cancelled. '''
         if safeget(self.running_commands, str(id), "cancel"):
             # Raise an exception to immediately stop the command operations
             raise(CommandCancelledError(f"Command {id} Cancelled"))
@@ -67,7 +67,6 @@ class Satellite:
             # Error sends data with low battery voltage and low uptime counter
             # Nominal sends normal data that just varies slightly
 
-            # Note that while we call various gateway
             self.telemetry.safemode = False
 
             errors = self.validate(command)
@@ -90,7 +89,13 @@ class Satellite:
         
         elif command.type == "update_file_list":
             """
-            Sends a dummy file list to Major Tom.
+            Sends a dummy file list of images to Major Tom.
+
+            Note that this command is special. In addition to the normal location in the commands list, 
+            it appears as a button on the "Downlink" tab for a satellite. 
+            
+            Certain commands are 'known' to Major Tom, and can appear in more convenient places in the UI because of that. 
+            See the documentation for a full list of such commands.
             """
             for i in range(1, randint(2, 4)):
                 self.file_list.append({
@@ -100,15 +105,22 @@ class Satellite:
                     "metadata": {"type": "image", "lat": (randint(-89, 89) + .0001*randint(0, 9999)), "lng": (randint(-179, 179) + .0001*randint(0, 9999))}
                 })
 
-            self.check_cancelled(id=command.id, gateway=gateway)
+            self.check_cancelled(id=command.id)
+            logger.info("Files: {}".format(self.file_list))
             r = Timer(0.1, gateway.update_file_list, kwargs={"system":self.name, "files":self.file_list})
             r.start()
             time.sleep(10)
-            self.check_cancelled(id=command.id, gateway=gateway)
-            gateway.complete_command(
-                command_id=command.id,
-                output="Updated Remote File List"
-            )
+            self.check_cancelled(id=command.id)
+            gateway.set_command_status(
+                command_id=command.id, 
+                status=CommandStatus.COMPLETED, 
+                payload="Updated Remote File List")
+
+        elif command.type == "error":
+            """ Simulates a command erroring out. """
+            logger.warn(f"We can print a warning to the log here.")
+            errors = [f"Command purposely failed."]
+            gateway.fail_command(command.id, errors=errors)
 
         else:
             # We'd want to generate an error if the command wasn't found.

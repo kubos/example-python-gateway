@@ -124,7 +124,7 @@ def run_sync(args):
 
     # To make it easier to interact with this Gateway, we are going to configure a bunch of commands for a satellite
     # called "Example FlatSat". Please see the associated json file to see the list of commands.
-    # logger.debug("Setting up Example Flatsat satellite and associated commands")
+    logger.debug("Setting up Example Flatsat satellite and associated commands")
     with open('satellite/example_commands.json','r') as f:
         command_defs = json.loads(f.read())
     asyncio.ensure_future(websocket_connection.update_command_definitions(
