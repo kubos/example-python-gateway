@@ -2,8 +2,8 @@ import logging
 import asyncio
 import argparse
 import json
-from gateway.gateway import Gateway
-from demo.demo_sat import DemoSat
+from gateway import Gateway
+from demo import DemoSat
 from majortom_gateway import GatewayAPI
 
 logger = logging.getLogger(__name__)

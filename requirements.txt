@@ -1,6 +1,6 @@
 websockets
 requests
-majortom_gateway>=0.0.10
+majortom_gateway>=0.1.0
 mock>=4.0.3
 pytest-asyncio
 pytest-only>=1.2.2
