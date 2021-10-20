@@ -1,6 +1,11 @@
+import logging
 import random 
 import json
+import gzip
 from majortom_gateway.command import Command
+
+
+logger = logging.getLogger(__name__)
 
 # TRANSLATION
 
@@ -28,10 +33,18 @@ def depacketize(data):
 
 def decrypt(data):
     # Stub for decryption logic
+    # logger.info("Simulating decryption with gzip decompression")
+    # debug_hexprint(data)
+    # decrypted = gzip.decompress(data)
+    # return decrypted
     return data
 
 def encrypt(data):
     # Stub for encryption logic
+    # logger.info("Simulating encryption with gzip compression")
+    # encrypted = gzip.compress(data)
+    # debug_hexprint(encrypted)
+    # return encrypted
     return data
 
 # DATA PROCESSING

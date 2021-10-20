@@ -73,6 +73,7 @@ def run_async(args):
         basic_auth=args.basicauth,
         command_callback=demo_sat.command_callback,
         cancel_callback=demo_sat.cancel_callback,
+        received_blob_callback=demo_sat.received_blob_callback,
         http=args.http)
 
     logger.debug("Connecting to MajorTom")

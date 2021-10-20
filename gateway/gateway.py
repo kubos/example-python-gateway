@@ -163,16 +163,24 @@ class Gateway:
         # The data comes in the "blob" argument.
         # The "context" argument contains information around the conditions under which the data were obtained -- things like a Pass ID, Norad ID, or similar.
         # An optional "metadata" argument may contain traceability-related data, such as timestamps or internal processing steps.
-        logger.info("Got binary from groundstation network!")
-        logger.info("Context was:" + str(context))
+        if context.get('uuid', None) is not None:
+            logger.info(f"Got {context['uuid']}: Size: " + str(len(blob)))    
+        else:
+            logger.info("Got blob of size: " + str(len(blob)))
+        # logger.info("Context was:" + str(context))
+        # stubs.debug_hexprint(blob)
         # logger.info("Metadata was:" + str(metadata))
-        decrypted = stubs.decrypt(blob)    
-        depacketized = stubs.depacketize(decrypted)
-        command = stubs.translate_binary_to_command(depacketized)
 
-        # Once the data is understandable, you can route it to the proper
-        # processing pipeline and inform the operator.
-        self.set_command_status(command.id, CommandStatus.COMPLETED)
+        # Try processsing
+        try:
+            decrypted = stubs.decrypt(blob)    
+            depacketized = stubs.depacketize(decrypted)
+            command = stubs.translate_binary_to_command(depacketized)
+            # Once the data is understandable, you can route it to the proper
+            # processing pipeline and inform the operator.
+            self.set_command_status(command.id, CommandStatus.COMPLETED)
+        except:
+            pass
 
     def update_metrics(self, metrics):
         # Metrics are of the form:

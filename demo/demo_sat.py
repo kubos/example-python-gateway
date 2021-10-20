@@ -497,3 +497,12 @@ class DemoSat:
                     command_id=command.id, errors=[
                         "Command Failed to Execute. Unknown Error Occurred.", f"Error: {traceback.format_exc()}"]))
         self.running_commands.pop(str(command.id))
+
+    async def received_blob_callback(self, blob, context, *args, **kwargs):
+        # When we receive data from a Groundstation Network, this callback is called.
+        # The data comes in the "blob" argument.
+        # The "context" argument contains information around the conditions under which the data were obtained -- things like a Pass ID, Norad ID, or similar.
+        # An optional "metadata" argument may contain traceability-related data, such as timestamps or internal processing steps.
+        logger.info("Got blob! Size: " + str(len(blob)))
+        # logger.info("Context was:" + str(context))
+        # stubs.debug_hexprint(blob)
