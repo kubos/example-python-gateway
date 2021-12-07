@@ -27,6 +27,15 @@
             {"name": "duration", "type": "integer", "default": 300}
         ]
     },
+    "backfill_tlm": {
+        "display_name": "Backfill Telemetry (simulates processing a bunch of downloaded tlm)",
+        "description": "Simulates processing a bunch of downloaded telemetry from DURATION seconds ago",
+        "tags": ["operations", "testing"],
+        "fields": [
+            {"name": "mode", "type": "string", "range": ["NOMINAL", "ERROR"]},
+            {"name": "duration", "type": "integer", "default": 300}
+        ]
+    },
     "error": {
         "display_name": "5. Error Command",
         "description": "Always errors to show the error process.",

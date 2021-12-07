@@ -45,8 +45,11 @@ class FakeTelemetry:
             }
         }
 
+    def uptime(self, timestamp_ms):
+        return timestamp_ms/1000.0 - self.start_time
+
     # Returns metrics, [list of errors]
-    def generate_telemetry(self, mode="NOMINAL"):
+    def generate_telemetry(self, mode="NOMINAL", timestamp_ms=None):
         if mode == "NOMINAL":
             self.__nominal()
         elif mode == "ERROR":
@@ -55,13 +58,16 @@ class FakeTelemetry:
         else:
             raise(ValueError(f'Telemetry mode must be NOMINAL or ERROR, not {mode}'))
 
+        if timestamp_ms is None:
+            timestamp_ms = int(time.time() * 1000)
+
         if self.safemode == True:
             event = {
                 "system": self.name,
                 "type": "Telemetry Alert",
                 "level": "warning",
                 "message": "Stopping Telemetry beacon, entering safemode.",
-                "timestamp": int(time.time() * 1000)
+                "timestamp": timestamp_ms
             }
             return None, [event]
         
@@ -73,15 +79,14 @@ class FakeTelemetry:
                     "subsystem": subsystem,
                     "metric": metric,
                     "value": self.telemetry[subsystem][metric]["value"],
-                    "timestamp": int(time.time() * 1000)
+                    "timestamp": timestamp_ms
                 })
         metrics.append({
             "system": self.name,
             "subsystem": "obc",
             "metric": "uptime",
-            "value": (time.time() - self.start_time),
-            "timestamp": int(time.time() * 1000)
-
+            "value": self.uptime(timestamp_ms),
+            "timestamp": timestamp_ms
         })
         return metrics, []
 

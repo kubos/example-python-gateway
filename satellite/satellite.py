@@ -87,6 +87,36 @@ class Satellite:
                         logger.warn(errors)
                     time.sleep(1)
         
+        elif command.type == "backfill_tlm":
+            # Download telemetry for the previous X minutes
+
+            self.telemetry.safemode = False
+
+            errors = self.validate(command)
+            duration = command.fields['duration']
+            mode = command.fields['mode']
+            now_ms = round(int(time.time()*1000), -3)
+            if errors:
+                gateway.fail_command(command.id, errors)
+            else:
+                all_metrics = []
+                for t in reversed(range(duration)):
+                    self.check_cancelled(id=command.id)
+                    t_ms = round(t * 1000, -3)
+                    timestamp_ms = now_ms - t_ms
+                    metrics, errors = self.telemetry.generate_telemetry(mode=mode, timestamp_ms=timestamp_ms)
+                    all_metrics.extend(metrics)
+                    if len(all_metrics) > 550:
+                        gateway.update_metrics(all_metrics)
+                        logger.info(f"Sent {len(all_metrics)} metrics. Most recent at {timestamp_ms}")
+                        all_metrics = []
+                        time.sleep(0.5)
+                gateway.update_metrics(all_metrics)
+                all_metrics = []
+
+                msg = f"Downlinked Telemetry for previous {duration} seconds."
+                gateway.set_command_status(command.id, CommandStatus.COMPLETED, payload=msg)
+
         elif command.type == "update_file_list":
             """
             Sends a dummy file list of images to Major Tom.
