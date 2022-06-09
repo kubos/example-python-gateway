@@ -102,7 +102,7 @@ class Satellite:
                 all_metrics = []
                 for t in reversed(range(duration)):
                     self.check_cancelled(id=command.id)
-                    t_ms = round(t * 1000, -3)
+                    t_ms = round(t * 100, -3)
                     timestamp_ms = now_ms - t_ms
                     metrics, errors = self.telemetry.generate_telemetry(mode=mode, timestamp_ms=timestamp_ms)
                     all_metrics.extend(metrics)

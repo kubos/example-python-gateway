@@ -3,7 +3,7 @@ import random
 
 
 class FakeTelemetry:
-    def __init__(self, name):
+    def __init__(self, name, extra_panels=0):
         self.name = name
         self.alerted = False
         self.safemode = False
@@ -44,6 +44,16 @@ class FakeTelemetry:
                 }
             }
         }
+        for i in range(extra_panels): 
+            k = "temperature_{}".format(i)
+            x = i * 0.001
+            self.telemetry["panels"][k] = {
+                "value": x + 24.5,  # Celsius, starting
+                "step": x + 0.1,
+                "max": 35,
+                "min": 20
+            }
+
 
     def uptime(self, timestamp_ms):
         return timestamp_ms/1000.0 - self.start_time
