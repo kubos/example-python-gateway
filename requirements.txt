@@ -1,4 +1,4 @@
-websockets
+websockets>=13.0,<14.0
 requests
 majortom_gateway>=0.0.10
 mock>=4.0.3
