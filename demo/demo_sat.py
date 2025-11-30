@@ -48,7 +48,9 @@ class DemoSat:
                 "display_name": "Update File List",
                 "description": "Downlinks the latest file list from the spacecraft.",
                 "tags": ["files", "operations"],
-                "fields": []
+                "fields": [
+                    {"name": "show_hidden", "type": "boolean", "default": False }
+                ]
             },
             "uplink_file": {
                 "display_name": "Uplink File",
