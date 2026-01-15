@@ -39,7 +39,7 @@ If you are looking to use this gateway as an example to write your own, use that
 
 Clone locally to use it with Major Tom.
 
-Requires Python 3.6+ and package requirements are in `requirements.txt`. Install with the command:
+Requires Python 3.13+ and package requirements are in `requirements.txt`. Install with the command:
 
 ```pip3 install -r requirements.txt```
 
